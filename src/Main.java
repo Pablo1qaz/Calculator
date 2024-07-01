@@ -12,9 +12,12 @@ import java.awt.event.WindowStateListener;
 public class Main {
 
     private static boolean makeCommand = false;
+    private static boolean resetOnNextInput = false;
     private static String lastCommand = "";
     private static double result = 0;
     private static double lastNumber = 0;
+    private static String repeatCommand = "";
+    private static double repeatNumber = 0;
 
     public static void createAndShowGUI() {
         JFrame jf = new JFrame("My First Calculator");
@@ -37,7 +40,16 @@ public class Main {
                 System.out.println("Button = " + command);
 
                 if ("0123456789.".contains(command)) {
-                    if (makeCommand) {
+                    if (resetOnNextInput) {
+                        jtf.setText(command);
+                        resetOnNextInput = false;
+                        makeCommand = false;
+                        lastCommand = "";
+                        repeatCommand = "";
+                        lastNumber = 0;
+                        repeatNumber = 0;
+                        result = 0;
+                    } else if (makeCommand) {
                         jtf.setText(command);
                         makeCommand = false;
                     } else {
@@ -49,49 +61,70 @@ public class Main {
                     }
                 } else if ("/*-+".contains(command)) {
                     if (!jtf.getText().isEmpty()) {
-                        lastCommand = command;
-                        lastNumber = Double.parseDouble(jtf.getText());
-                        result = lastNumber;
+                        if (!lastCommand.isEmpty() && !makeCommand) {
+                            lastNumber = Double.parseDouble(jtf.getText());
+                            performOperation();
+                            jtf.setText(Double.toString(result));
+                        } else {
+                            result = Double.parseDouble(jtf.getText());
+                        }
+                        repeatCommand = lastCommand = command;
+                        repeatNumber = lastNumber = result;
                         makeCommand = true;
+                        resetOnNextInput = false;
                     }
                 } else if ("=".equals(command)) {
                     if (!lastCommand.isEmpty()) {
                         if (!makeCommand) {
                             lastNumber = Double.parseDouble(jtf.getText());
                         }
-
-                        switch (lastCommand) {
-                            case "+":
-                                result += lastNumber;
-                                break;
-                            case "-":
-                                result -= lastNumber;
-                                break;
-                            case "*":
-                                result *= lastNumber;
-                                break;
-                            case "/":
-                                if (lastNumber != 0) {
-                                    result /= lastNumber;
-                                } else {
-                                    jtf.setText("Error");
-                                    return;
-                                }
-                                break;
-                        }
-
+                        performOperation();
+                        jtf.setText(Double.toString(result));
+                        repeatCommand = lastCommand;
+                        repeatNumber = lastNumber;
+                        lastCommand = "";
+                        makeCommand = true;
+                        resetOnNextInput = true;
+                    } else if (!repeatCommand.isEmpty()) {
+                        lastCommand = repeatCommand;
+                        lastNumber = repeatNumber;
+                        performOperation();
                         jtf.setText(Double.toString(result));
                         makeCommand = true;
-                    } else {
-                        // If lastCommand is empty, just display the current number
-                        jtf.setText(jtf.getText());
-                        result = Double.parseDouble(jtf.getText());
+                        resetOnNextInput = true;
                     }
                 } else if ("C".equals(command)) {
                     jtf.setText("0");
                     result = 0;
                     lastCommand = "";
+                    repeatCommand = "";
                     makeCommand = false;
+                    resetOnNextInput = false;
+                    lastNumber = 0;
+                    repeatNumber = 0;
+                }
+            }
+
+            private void performOperation() {
+                switch (lastCommand) {
+                    case "+":
+                        result += lastNumber;
+                        break;
+                    case "-":
+                        result -= lastNumber;
+                        break;
+                    case "*":
+                        result *= lastNumber;
+                        break;
+                    case "/":
+                        if (lastNumber != 0) {
+                            result /= lastNumber;
+                        } else {
+                            jtf.setText("Error");
+                            lastCommand = "";
+                            makeCommand = true;
+                        }
+                        break;
                 }
             }
         };
